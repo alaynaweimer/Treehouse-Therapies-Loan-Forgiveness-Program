@@ -485,8 +485,9 @@
         // GOOGLE SHEETS CONFIGURATION
         // ============================================
         const SHEET_ID = '1gZC6vPGthfVr05KK9_2Re55F5OmC-tS0HbkOJ4zDg1U';
-        const SHEET_NAME = 'Sheet1';
-        const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+        const SHEET_GID = '0';
+        // Using gviz which handles CORS better for public sheets
+        const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
         // ============================================
 
         let programsData = [];
@@ -494,12 +495,42 @@
         // Load programs from Google Sheet on page load
         window.addEventListener('DOMContentLoaded', async function() {
             try {
+                console.log('🔄 Loading data from Google Sheet...');
+                console.log('📍 URL:', GOOGLE_SHEET_URL);
+                
                 const response = await fetch(GOOGLE_SHEET_URL);
+                
+                console.log('📥 Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const csvText = await response.text();
+                console.log('📄 CSV length:', csvText.length);
+                
+                if (!csvText || csvText.trim().length === 0) {
+                    throw new Error('Google Sheet returned empty data');
+                }
+                
                 programsData = parseCSV(csvText);
                 console.log('✅ Loaded', programsData.length, 'programs from Google Sheet');
+                console.log('📋 Programs:', programsData);
+                
+                if (programsData.length === 0) {
+                    console.warn('⚠️ No ACTIVE programs found in sheet');
+                }
             } catch (error) {
                 console.error('❌ Error loading programs:', error);
+                console.error('Error details:', error.message);
+                // Show a helpful error message to the user
+                document.getElementById('calculatorForm').insertAdjacentHTML('beforebegin', `
+                    <div class="error-box" style="margin-bottom: 20px;">
+                        <strong>⚠️ Unable to load program data</strong><br>
+                        Error: ${error.message}<br><br>
+                        Please check the browser console (F12) for more details.
+                    </div>
+                `);
             }
         });
 
