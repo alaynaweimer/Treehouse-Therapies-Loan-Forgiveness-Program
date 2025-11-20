@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treehouse Therapies - Loan Forgiveness Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px 15px 0 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .logo-section h1 {
+            font-size: 2.2em;
+            font-weight: 600;
+        }
+
+        .tagline {
+            color: #ff9800;
+            font-size: 1.2em;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+
+        .subtitle {
+            font-size: 1em;
+            opacity: 0.95;
+            margin-top: 10px;
+        }
+
+        .main-content {
+            background: white;
+            padding: 40px;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .section {
+            margin-bottom: 35px;
+        }
+
+        .section-title {
+            color: #2e7d32;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #ff9800;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #2e7d32;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff9800;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.1);
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .program-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #4caf50;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .program-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .program-name {
+            color: #2e7d32;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            background: #4caf50;
+            color: white;
+        }
+
+        .program-details {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .program-details strong {
+            color: #2e7d32;
+        }
+
+        .forgiveness-highlight {
+            background: white;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .forgiveness-amount {
+            color: #ff9800;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .year-plan {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+
+        .year-plan-title {
+            color: #2e7d32;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .year-row {
+            display: grid;
+            grid-template-columns: 80px 120px 120px 120px 120px;
+            gap: 10px;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .year-row:first-child {
+            font-weight: 600;
+            color: #2e7d32;
+            background: #f1f8f4;
+            border-radius: 5px;
+        }
+
+        .year-row:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            background: #fff3e0;
+        }
+
+        .apply-btn {
+            background: #2e7d32;
+            color: white;
+            padding: 10px 25px;
+            text-decoration: none;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 15px;
+            margin-right: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .apply-btn:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+        }
+
+        .info-btn {
+            background: #757575;
+        }
+
+        .info-btn:hover {
+            background: #616161;
+        }
+
+        .summary-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 3px solid #ff9800;
+            border-radius: 12px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .summary-title {
+            color: #e65100;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .total-forgiveness {
+            color: #ff9800;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .summary-details {
+            color: #333;
+            line-height: 1.8;
+            font-size: 1.1em;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .footer-brand {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .footer-tagline {
+            color: #ff9800;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        .footer-copyright {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .info-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .info-box p {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .info-icon {
+            color: #ff9800;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #2e7d32;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4caf50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-box {
+            background: #ffebee;
+            border-left: 4px solid #e57373;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            color: #c62828;
+        }
+
+        @media (max-width: 768px) {
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .year-row {
+                grid-template-columns: 60px 90px 90px 90px 90px;
+                font-size: 0.8em;
+                gap: 5px;
+            }
+
+            .logo-section h1 {
+                font-size: 1.5em;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-section">
+                <h1>🌳 Treehouse Therapies</h1>
+            </div>
+            <div class="tagline">Loan Forgiveness Program Calculator</div>
+            <div class="subtitle">Children • Family • Community</div>
+        </div>
+
+        <div class="main-content">
+            <div class="info-box">
+                <p><span class="info-icon">ℹ️</span><strong>Important:</strong> This calculator helps you estimate potential loan forgiveness based on current program requirements. Actual awards are subject to program availability, funding, and approval. Always verify eligibility directly with each program.</p>
+            </div>
+
+            <form id="calculatorForm">
+                <div class="section">
+                    <div class="section-title">Your Information</div>
+                    
+                    <div class="two-column">
+                        <div class="input-group">
+                            <label for="providerName">Your Name</label>
+                            <input type="text" id="providerName" required placeholder="Enter your full name">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="profession">Your Profession</label>
+                            <select id="profession" required>
+                                <option value="">Select your profession</option>
+                                <option value="PT">Physical Therapist (PT)</option>
+                                <option value="OT">Occupational Therapist (OT)</option>
+                                <option value="SLP">Speech-Language Pathologist (SLP)</option>
+                                <option value="MH">Mental Health Counselor (LCSW, LMFT, LPC)</option>
+                                <option value="BCBA">Board Certified Behavior Analyst (BCBA)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="two-column">
+                        <div class="input-group">
+                            <label for="location">Practice Location</label>
+                            <select id="location" required>
+                                <option value="">Select your location</option>
+                                <option value="Bend">Treehouse Therapies - Bend</option>
+                                <option value="Redmond">Treehouse Therapies - Redmond</option>
+                                <option value="Sisters">Treehouse Therapies - Sisters</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="employmentStatus">Employment Status</label>
+                            <select id="employmentStatus" required>
+                                <option value="">Select employment status</option>
+                                <option value="FT">Full-Time (32+ hours/week)</option>
+                                <option value="PT">Part-Time (20-31 hours/week)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Your Student Loan Information</div>
+                    
+                    <div class="two-column">
+                        <div class="input-group">
+                            <label for="totalDebt">Total Qualifying Student Loan Debt</label>
+                            <input type="number" id="totalDebt" required placeholder="0" min="0" step="100">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="monthlyPayment">Current Monthly Payment (Optional)</label>
+                            <input type="number" id="monthlyPayment" placeholder="0" min="0" step="10">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="calculateBtn">Calculate My Loan Forgiveness Options</button>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Calculating your personalized loan forgiveness options...</p>
+            </div>
+
+            <div class="results-section" id="results">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-brand">Created by Discover Your Success with Alayna Marie</div>
+            <div class="footer-tagline">Specifically and Intentionally for Treehouse Therapies</div>
+            <div class="footer-copyright">© 2024-2025 Discover Your Success with Alayna Marie. All Rights Reserved.<br>
+            Developed by IPC Fractional Services</div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // GOOGLE SHEETS CONFIGURATION
+        // ============================================
+        const SHEET_ID = '1gZC6vPGthfVr05KK9_2Re55F5OmC-tS0HbkOJ4zDg1U';
+        const SHEET_NAME = 'Sheet1';
+        const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+        // ============================================
+
+        let programsData = [];
+
+        // Load programs from Google Sheet on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL);
+                const csvText = await response.text();
+                programsData = parseCSV(csvText);
+                console.log('✅ Loaded', programsData.length, 'programs from Google Sheet');
+            } catch (error) {
+                console.error('❌ Error loading programs:', error);
+            }
+        });
+
+        // Parse CSV data from Google Sheets
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const programs = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const values = lines[i].split(',').map(v => v.trim());
+                const program = {};
+                
+                headers.forEach((header, index) => {
+                    program[header] = values[index] || '';
+                });
+                
+                // Only include active programs
+                if (program.Status === 'ACTIVE') {
+                    programs.push(program);
+                }
+            }
+
+            return programs;
+        }
+
+        // Handle form submission
+        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (programsData.length === 0) {
+                showError('Program data not loaded. Please check that your Google Sheet is published and the URL is correct.');
+                return;
+            }
+
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('results').style.display = 'none';
+            
+            setTimeout(() => {
+                calculateForgiveness();
+                document.getElementById('loading').classList.remove('active');
+            }, 1000);
+        });
+
+        function calculateForgiveness() {
+            const name = document.getElementById('providerName').value;
+            const profession = document.getElementById('profession').value;
+            const location = document.getElementById('location').value;
+            const employmentStatus = document.getElementById('employmentStatus').value;
+            const totalDebt = parseFloat(document.getElementById('totalDebt').value);
+            const monthlyPayment = parseFloat(document.getElementById('monthlyPayment').value) || 0;
+
+            let resultsHTML = `
+                <div class="section-title">Your Personalized Loan Forgiveness Options</div>
+                <div class="info-box">
+                    <p><strong>${name}</strong> | ${getProfessionName(profession)} | ${location} | ${employmentStatus === 'FT' ? 'Full-Time' : 'Part-Time'}<br>
+                    Total Qualifying Debt: <strong>$${totalDebt.toLocaleString()}</strong></p>
+                </div>
+            `;
+
+            let totalPotentialForgiveness = 0;
+            let eligiblePrograms = [];
+
+            programsData.forEach(program => {
+                const isEligible = checkEligibility(program, profession, location);
+                
+                if (isEligible) {
+                    const forgiveness = calculateProgramForgiveness(program, totalDebt, employmentStatus, monthlyPayment);
+                    eligiblePrograms.push({ program, forgiveness });
+                    totalPotentialForgiveness += forgiveness.totalForgiveness;
+                    
+                    resultsHTML += generateProgramCard(program, forgiveness, employmentStatus);
+                }
+            });
+
+            if (eligiblePrograms.length > 0) {
+                resultsHTML += `
+                    <div class="summary-box">
+                        <div class="summary-title">💰 Your Total Potential Loan Forgiveness</div>
+                        <div class="total-forgiveness">$${totalPotentialForgiveness.toLocaleString()}</div>
+                        <div class="summary-details">
+                            You qualify for <strong>${eligiblePrograms.length}</strong> program(s)!<br>
+                            This represents <strong>${Math.round((totalPotentialForgiveness/totalDebt)*100)}%</strong> of your total debt.
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultsHTML += `
+                    <div class="error-box">
+                        <p><strong>No Eligible Programs Found</strong><br>
+                        Based on your profession (${getProfessionName(profession)}) and location (${location}), you do not currently qualify for these loan forgiveness programs.<br><br>
+                        Please contact HR or the Oregon Office of Rural Health for more information.</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('results').innerHTML = resultsHTML;
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function checkEligibility(program, profession, location) {
+            const professionKey = profession + ' Eligible';
+            if (program[professionKey] !== 'YES') return false;
+
+            const locationKey = location + ' Site';
+            if (program[locationKey] !== 'YES') return false;
+
+            return true;
+        }
+
+        function calculateProgramForgiveness(program, totalDebt, employmentStatus, monthlyPayment) {
+            const isFT = employmentStatus === 'FT';
+            const years = parseInt(program['Service Years']) || 0;
+            const annualMax = parseFloat(isFT ? program['Full Time Annual Max'] : program['Part Time Annual Max']) || 0;
+            const percent = parseFloat(isFT ? program['Full Time Percentage'] : program['Part Time Percentage']) || 0;
+            
+            let yearlyBreakdown = [];
+            let remainingDebt = totalDebt;
+            let totalForgiveness = 0;
+
+            if (program['Program Code'] === 'PSLF') {
+                const estimatedMonthlyPayment = monthlyPayment || (totalDebt * 0.01);
+                const totalPayments = estimatedMonthlyPayment * 120;
+                const forgiveness = Math.max(0, totalDebt - totalPayments);
+                totalForgiveness = forgiveness;
+
+                for (let year = 1; year <= 10; year++) {
+                    const yearPayments = estimatedMonthlyPayment * 12;
+                    remainingDebt -= yearPayments;
+                    yearlyBreakdown.push({
+                        year,
+                        payment: yearPayments,
+                        forgiveness: (year === 10 ? Math.max(0, remainingDebt) : 0),
+                        remainingDebt: Math.max(0, remainingDebt)
+                    });
+                }
+            } else {
+                for (let year = 1; year <= years; year++) {
+                    let yearForgiveness = 0;
+                    
+                    const minDebt = isFT ? 29000 : 15000;
+                    const maxSpecial = isFT ? 20000 : 10000;
+                    
+                    if (remainingDebt < minDebt) {
+                        yearForgiveness = Math.min(remainingDebt, maxSpecial / years);
+                    } else {
+                        const percentForgiveness = (totalDebt * percent / 100) / years;
+                        yearForgiveness = Math.min(percentForgiveness, annualMax);
+                    }
+                    
+                    yearForgiveness = Math.min(yearForgiveness, remainingDebt);
+                    totalForgiveness += yearForgiveness;
+                    remainingDebt -= yearForgiveness;
+                    
+                    yearlyBreakdown.push({
+                        year,
+                        payment: monthlyPayment * 12,
+                        forgiveness: yearForgiveness,
+                        remainingDebt: Math.max(0, remainingDebt)
+                    });
+                }
+            }
+
+            const lifetimeMax = parseFloat(program['Lifetime Max']) || Infinity;
+            return {
+                totalForgiveness: Math.min(totalForgiveness, lifetimeMax, totalDebt),
+                yearlyBreakdown,
+                programYears: years
+            };
+        }
+
+        function generateProgramCard(program, forgiveness, employmentStatus) {
+            let cardHTML = `
+                <div class="program-card">
+                    <div class="program-header">
+                        <div class="program-name">${program['Program Name']}</div>
+                        <div class="status-badge">✓ ELIGIBLE</div>
+                    </div>
+                    <div class="program-details">
+                        <strong>Program Type:</strong> ${program['Program Type']}<br>
+                        <strong>Service Commitment:</strong> ${program['Service Years']} years<br>
+                        <strong>Application Deadline:</strong> ${program['Application Deadline']}<br>
+                        <strong>Notes:</strong> ${program['Special Notes']}
+                    </div>
+
+                    <div class="forgiveness-highlight">
+                        <div>Estimated Total Forgiveness:</div>
+                        <div class="forgiveness-amount">$${forgiveness.totalForgiveness.toLocaleString()}</div>
+                    </div>
+
+                    <div class="year-plan">
+                        <div class="year-plan-title">📅 ${program['Service Years']}-Year Projection</div>
+                        <div class="year-row">
+                            <div>Year</div>
+                            <div>Your Payments</div>
+                            <div>Forgiveness</div>
+                            <div>Remaining</div>
+                            <div>Total Forgiven</div>
+                        </div>
+            `;
+
+            let cumulativeForgiveness = 0;
+            forgiveness.yearlyBreakdown.forEach(year => {
+                cumulativeForgiveness += year.forgiveness;
+                cardHTML += `
+                    <div class="year-row">
+                        <div>Year ${year.year}</div>
+                        <div>$${year.payment.toLocaleString()}</div>
+                        <div style="color: #ff9800; font-weight: 600;">$${year.forgiveness.toLocaleString()}</div>
+                        <div>$${year.remainingDebt.toLocaleString()}</div>
+                        <div style="color: #2e7d32; font-weight: 600;">$${cumulativeForgiveness.toLocaleString()}</div>
+                    </div>
+                `;
+            });
+
+            cardHTML += `
+                    </div>
+                    <a href="${program['Application URL']}" target="_blank" class="apply-btn">Apply Now →</a>
+                    <a href="${program['Info URL']}" target="_blank" class="apply-btn info-btn">Learn More</a>
+                </div>
+            `;
+
+            return cardHTML;
+        }
+
+        function getProfessionName(code) {
+            const names = {
+                'PT': 'Physical Therapist',
+                'OT': 'Occupational Therapist',
+                'SLP': 'Speech-Language Pathologist',
+                'MH': 'Mental Health Counselor',
+                'BCBA': 'Board Certified Behavior Analyst'
+            };
+            return names[code] || code;
+        }
+
+        function showError(message) {
+            document.getElementById('results').innerHTML = `
+                <div class="error-box">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
