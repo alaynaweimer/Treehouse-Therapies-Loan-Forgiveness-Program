@@ -32,22 +32,34 @@
             text-align: center;
         }
 
-        .logo-section h1 {
-            font-size: 2.2em;
-            font-weight: 600;
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-section img {
+            max-width: 350px;
+            height: auto;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         .tagline {
             color: #ff9800;
-            font-size: 1.2em;
-            font-weight: 500;
-            margin-top: 5px;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-top: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         .subtitle {
             font-size: 1em;
             opacity: 0.95;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         .main-content {
@@ -362,6 +374,15 @@
             color: #c62828;
         }
 
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            color: #2e7d32;
+        }
+
         @media (max-width: 768px) {
             .two-column {
                 grid-template-columns: 1fr;
@@ -373,8 +394,12 @@
                 gap: 5px;
             }
 
-            .logo-section h1 {
-                font-size: 1.5em;
+            .logo-section img {
+                max-width: 280px;
+            }
+
+            .tagline {
+                font-size: 1.2em;
             }
 
             .main-content {
@@ -387,16 +412,17 @@
     <div class="container">
         <div class="header">
             <div class="logo-section">
-                <h1>🌳 Treehouse Therapies</h1>
+                <img src="Treehouse_Logo.png" alt="Treehouse Therapies - Children • Family • Community">
+                <div class="tagline">Loan Forgiveness Program Calculator</div>
             </div>
-            <div class="tagline">Loan Forgiveness Program Calculator</div>
-            <div class="subtitle">Children • Family • Community</div>
         </div>
 
         <div class="main-content">
             <div class="info-box">
                 <p><span class="info-icon">ℹ️</span><strong>Important:</strong> This calculator helps you estimate potential loan forgiveness based on current program requirements. Actual awards are subject to program availability, funding, and approval. Always verify eligibility directly with each program.</p>
             </div>
+
+            <div id="loadStatus"></div>
 
             <form id="calculatorForm">
                 <div class="section">
@@ -486,17 +512,106 @@
         // ============================================
         const SHEET_ID = '1gZC6vPGthfVr05KK9_2Re55F5OmC-tS0HbkOJ4zDg1U';
         const SHEET_GID = '0';
-        // Using gviz which handles CORS better for public sheets
         const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
         // ============================================
 
         let programsData = [];
 
+        // Robust CSV parser that handles quoted fields with commas
+        function parseCSV(csv) {
+            const lines = [];
+            let currentLine = '';
+            let insideQuotes = false;
+            
+            for (let i = 0; i < csv.length; i++) {
+                const char = csv[i];
+                
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                    currentLine += char;
+                } else if (char === '\n' && !insideQuotes) {
+                    if (currentLine.trim()) {
+                        lines.push(currentLine);
+                    }
+                    currentLine = '';
+                } else if (char === '\r') {
+                    // Skip carriage returns
+                } else {
+                    currentLine += char;
+                }
+            }
+            
+            if (currentLine.trim()) {
+                lines.push(currentLine);
+            }
+
+            if (lines.length === 0) return [];
+
+            // Parse header row
+            const headers = parseCSVLine(lines[0]);
+            console.log('📋 Headers found:', headers);
+            
+            const programs = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                const program = {};
+                
+                headers.forEach((header, index) => {
+                    // Clean up the header and value
+                    const cleanHeader = header.replace(/^"|"$/g, '').trim();
+                    const cleanValue = (values[index] || '').replace(/^"|"$/g, '').trim();
+                    program[cleanHeader] = cleanValue;
+                });
+                
+                // Only include active programs
+                if (program.Status === 'ACTIVE') {
+                    programs.push(program);
+                    console.log('✅ Added program:', program['Program Name']);
+                }
+            }
+
+            return programs;
+        }
+
+        // Parse a single CSV line, handling quoted fields
+        function parseCSVLine(line) {
+            const values = [];
+            let currentValue = '';
+            let insideQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (insideQuotes && line[i + 1] === '"') {
+                        // Escaped quote
+                        currentValue += '"';
+                        i++;
+                    } else {
+                        insideQuotes = !insideQuotes;
+                    }
+                } else if (char === ',' && !insideQuotes) {
+                    values.push(currentValue.trim());
+                    currentValue = '';
+                } else {
+                    currentValue += char;
+                }
+            }
+            
+            values.push(currentValue.trim());
+            return values;
+        }
+
         // Load programs from Google Sheet on page load
         window.addEventListener('DOMContentLoaded', async function() {
+            const statusDiv = document.getElementById('loadStatus');
+            
             try {
                 console.log('🔄 Loading data from Google Sheet...');
                 console.log('📍 URL:', GOOGLE_SHEET_URL);
+                
+                statusDiv.innerHTML = '<div class="info-box"><p>⏳ Loading program data...</p></div>';
                 
                 const response = await fetch(GOOGLE_SHEET_URL);
                 
@@ -507,64 +622,47 @@
                 }
                 
                 const csvText = await response.text();
-                console.log('📄 CSV length:', csvText.length);
+                console.log('📄 CSV preview:', csvText.substring(0, 500));
                 
                 if (!csvText || csvText.trim().length === 0) {
                     throw new Error('Google Sheet returned empty data');
                 }
                 
                 programsData = parseCSV(csvText);
-                console.log('✅ Loaded', programsData.length, 'programs from Google Sheet');
-                console.log('📋 Programs:', programsData);
+                console.log('✅ Loaded', programsData.length, 'ACTIVE programs');
                 
                 if (programsData.length === 0) {
-                    console.warn('⚠️ No ACTIVE programs found in sheet');
+                    statusDiv.innerHTML = '<div class="error-box"><strong>⚠️ No active programs found.</strong><br>Please check that your Google Sheet has programs with Status = "ACTIVE".</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="success-box">✅ Loaded ${programsData.length} active loan forgiveness program(s)</div>`;
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        statusDiv.innerHTML = '';
+                    }, 3000);
                 }
+                
             } catch (error) {
                 console.error('❌ Error loading programs:', error);
-                console.error('Error details:', error.message);
-                // Show a helpful error message to the user
-                document.getElementById('calculatorForm').insertAdjacentHTML('beforebegin', `
-                    <div class="error-box" style="margin-bottom: 20px;">
+                statusDiv.innerHTML = `
+                    <div class="error-box">
                         <strong>⚠️ Unable to load program data</strong><br>
                         Error: ${error.message}<br><br>
-                        Please check the browser console (F12) for more details.
+                        <strong>Troubleshooting:</strong><br>
+                        1. Make sure the Google Sheet is published: File → Share → Publish to web<br>
+                        2. Select "Entire Document" and "Web page" or "CSV"<br>
+                        3. Click Publish and confirm<br>
+                        4. Refresh this page
                     </div>
-                `);
+                `;
             }
         });
-
-        // Parse CSV data from Google Sheets
-        function parseCSV(csv) {
-            const lines = csv.trim().split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            const programs = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                if (!lines[i].trim()) continue;
-                
-                const values = lines[i].split(',').map(v => v.trim());
-                const program = {};
-                
-                headers.forEach((header, index) => {
-                    program[header] = values[index] || '';
-                });
-                
-                // Only include active programs
-                if (program.Status === 'ACTIVE') {
-                    programs.push(program);
-                }
-            }
-
-            return programs;
-        }
 
         // Handle form submission
         document.getElementById('calculatorForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             if (programsData.length === 0) {
-                showError('Program data not loaded. Please check that your Google Sheet is published and the URL is correct.');
+                showError('Program data not loaded. Please check that your Google Sheet is published correctly.');
                 return;
             }
 
@@ -596,8 +694,12 @@
             let totalPotentialForgiveness = 0;
             let eligiblePrograms = [];
 
+            console.log('🔍 Checking eligibility for:', profession, location);
+
             programsData.forEach(program => {
+                console.log('Checking program:', program['Program Name']);
                 const isEligible = checkEligibility(program, profession, location);
+                console.log('  - Eligible:', isEligible);
                 
                 if (isEligible) {
                     const forgiveness = calculateProgramForgiveness(program, totalDebt, employmentStatus, monthlyPayment);
@@ -609,13 +711,14 @@
             });
 
             if (eligiblePrograms.length > 0) {
+                const percentForgiven = totalDebt > 0 ? Math.round((totalPotentialForgiveness/totalDebt)*100) : 0;
                 resultsHTML += `
                     <div class="summary-box">
                         <div class="summary-title">💰 Your Total Potential Loan Forgiveness</div>
                         <div class="total-forgiveness">$${totalPotentialForgiveness.toLocaleString()}</div>
                         <div class="summary-details">
                             You qualify for <strong>${eligiblePrograms.length}</strong> program(s)!<br>
-                            This represents <strong>${Math.round((totalPotentialForgiveness/totalDebt)*100)}%</strong> of your total debt.
+                            This represents <strong>${percentForgiven}%</strong> of your total debt.
                         </div>
                     </div>
                 `;
@@ -623,8 +726,8 @@
                 resultsHTML += `
                     <div class="error-box">
                         <p><strong>No Eligible Programs Found</strong><br>
-                        Based on your profession (${getProfessionName(profession)}) and location (${location}), you do not currently qualify for these loan forgiveness programs.<br><br>
-                        Please contact HR or the Oregon Office of Rural Health for more information.</p>
+                        Based on your profession (${getProfessionName(profession)}) and location (${location}), you do not currently qualify for the state-specific loan forgiveness programs in our database.<br><br>
+                        <strong>Note:</strong> You may still qualify for PSLF (Public Service Loan Forgiveness) as a Treehouse Therapies employee. Please contact HR for more information.</p>
                     </div>
                 `;
             }
@@ -635,11 +738,23 @@
         }
 
         function checkEligibility(program, profession, location) {
+            // Check profession eligibility
             const professionKey = profession + ' Eligible';
-            if (program[professionKey] !== 'YES') return false;
+            const professionEligible = program[professionKey];
+            console.log(`    Checking ${professionKey}: "${professionEligible}"`);
+            
+            if (professionEligible !== 'YES') {
+                return false;
+            }
 
+            // Check location eligibility
             const locationKey = location + ' Site';
-            if (program[locationKey] !== 'YES') return false;
+            const locationEligible = program[locationKey];
+            console.log(`    Checking ${locationKey}: "${locationEligible}"`);
+            
+            if (locationEligible !== 'YES') {
+                return false;
+            }
 
             return true;
         }
@@ -654,6 +769,7 @@
             let remainingDebt = totalDebt;
             let totalForgiveness = 0;
 
+            // Special handling for PSLF (10 years, 120 payments)
             if (program['Program Code'] === 'PSLF') {
                 const estimatedMonthlyPayment = monthlyPayment || (totalDebt * 0.01);
                 const totalPayments = estimatedMonthlyPayment * 120;
@@ -671,15 +787,19 @@
                     });
                 }
             } else {
+                // State programs with annual forgiveness
                 for (let year = 1; year <= years; year++) {
                     let yearForgiveness = 0;
                     
+                    // Check for small debt special handling
                     const minDebt = isFT ? 29000 : 15000;
                     const maxSpecial = isFT ? 20000 : 10000;
                     
-                    if (remainingDebt < minDebt) {
+                    if (totalDebt < minDebt) {
+                        // Small debt: up to 100% forgiven (max $20k FT / $10k PT)
                         yearForgiveness = Math.min(remainingDebt, maxSpecial / years);
                     } else {
+                        // Standard calculation: percentage of debt up to annual max
                         const percentForgiveness = (totalDebt * percent / 100) / years;
                         yearForgiveness = Math.min(percentForgiveness, annualMax);
                     }
@@ -697,15 +817,23 @@
                 }
             }
 
+            // Apply lifetime max
             const lifetimeMax = parseFloat(program['Lifetime Max']) || Infinity;
             return {
                 totalForgiveness: Math.min(totalForgiveness, lifetimeMax, totalDebt),
                 yearlyBreakdown,
-                programYears: years
+                programYears: years || 10
             };
         }
 
         function generateProgramCard(program, forgiveness, employmentStatus) {
+            const applicationUrl = program['Application URL'] && program['Application URL'] !== '__' 
+                ? program['Application URL'] 
+                : '#';
+            const infoUrl = program['Info URL'] && program['Info URL'] !== '__' 
+                ? program['Info URL'] 
+                : '#';
+            
             let cardHTML = `
                 <div class="program-card">
                     <div class="program-header">
@@ -714,8 +842,8 @@
                     </div>
                     <div class="program-details">
                         <strong>Program Type:</strong> ${program['Program Type']}<br>
-                        <strong>Service Commitment:</strong> ${program['Service Years']} years<br>
-                        <strong>Application Deadline:</strong> ${program['Application Deadline']}<br>
+                        <strong>Service Commitment:</strong> ${program['Service Years'] || '10'} years<br>
+                        <strong>Application Deadline:</strong> ${program['Application Deadline'] || 'See program website'}<br>
                         <strong>Notes:</strong> ${program['Special Notes']}
                     </div>
 
@@ -725,7 +853,7 @@
                     </div>
 
                     <div class="year-plan">
-                        <div class="year-plan-title">📅 ${program['Service Years']}-Year Projection</div>
+                        <div class="year-plan-title">📅 ${forgiveness.programYears}-Year Projection</div>
                         <div class="year-row">
                             <div>Year</div>
                             <div>Your Payments</div>
@@ -742,17 +870,17 @@
                     <div class="year-row">
                         <div>Year ${year.year}</div>
                         <div>$${year.payment.toLocaleString()}</div>
-                        <div style="color: #ff9800; font-weight: 600;">$${year.forgiveness.toLocaleString()}</div>
-                        <div>$${year.remainingDebt.toLocaleString()}</div>
-                        <div style="color: #2e7d32; font-weight: 600;">$${cumulativeForgiveness.toLocaleString()}</div>
+                        <div style="color: #ff9800; font-weight: 600;">$${Math.round(year.forgiveness).toLocaleString()}</div>
+                        <div>$${Math.round(year.remainingDebt).toLocaleString()}</div>
+                        <div style="color: #2e7d32; font-weight: 600;">$${Math.round(cumulativeForgiveness).toLocaleString()}</div>
                     </div>
                 `;
             });
 
             cardHTML += `
                     </div>
-                    <a href="${program['Application URL']}" target="_blank" class="apply-btn">Apply Now →</a>
-                    <a href="${program['Info URL']}" target="_blank" class="apply-btn info-btn">Learn More</a>
+                    ${applicationUrl !== '#' ? `<a href="${applicationUrl}" target="_blank" class="apply-btn">Apply Now →</a>` : ''}
+                    ${infoUrl !== '#' ? `<a href="${infoUrl}" target="_blank" class="apply-btn info-btn">Learn More</a>` : ''}
                 </div>
             `;
 
