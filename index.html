@@ -511,125 +511,59 @@
         // GOOGLE SHEETS CONFIGURATION
         // ============================================
         const SHEET_ID = '1gZC6vPGthfVr05KK9_2Re55F5OmC-tS0HbkOJ4zDg1U';
-        const SHEET_GID = '0';
-        const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
+        const SHEET_NAME = 'Sheet1'; // Change this if your sheet tab has a different name
         // ============================================
 
         let programsData = [];
 
-        // Robust CSV parser that handles quoted fields with commas
-        function parseCSV(csv) {
-            const lines = [];
-            let currentLine = '';
-            let insideQuotes = false;
-            
-            for (let i = 0; i < csv.length; i++) {
-                const char = csv[i];
-                
-                if (char === '"') {
-                    insideQuotes = !insideQuotes;
-                    currentLine += char;
-                } else if (char === '\n' && !insideQuotes) {
-                    if (currentLine.trim()) {
-                        lines.push(currentLine);
-                    }
-                    currentLine = '';
-                } else if (char === '\r') {
-                    // Skip carriage returns
-                } else {
-                    currentLine += char;
-                }
+        // Get cell value from Google Sheets JSON response
+        function getCellValue(row, index) {
+            if (row.c && row.c[index] && row.c[index].v !== null) {
+                return String(row.c[index].v);
             }
-            
-            if (currentLine.trim()) {
-                lines.push(currentLine);
-            }
-
-            if (lines.length === 0) return [];
-
-            // Parse header row
-            const headers = parseCSVLine(lines[0]);
-            console.log('📋 Headers found:', headers);
-            
-            const programs = [];
-
-            for (let i = 1; i < lines.length; i++) {
-                const values = parseCSVLine(lines[i]);
-                const program = {};
-                
-                headers.forEach((header, index) => {
-                    // Clean up the header and value
-                    const cleanHeader = header.replace(/^"|"$/g, '').trim();
-                    const cleanValue = (values[index] || '').replace(/^"|"$/g, '').trim();
-                    program[cleanHeader] = cleanValue;
-                });
-                
-                // Only include active programs
-                if (program.Status === 'ACTIVE') {
-                    programs.push(program);
-                    console.log('✅ Added program:', program['Program Name']);
-                }
-            }
-
-            return programs;
-        }
-
-        // Parse a single CSV line, handling quoted fields
-        function parseCSVLine(line) {
-            const values = [];
-            let currentValue = '';
-            let insideQuotes = false;
-            
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                
-                if (char === '"') {
-                    if (insideQuotes && line[i + 1] === '"') {
-                        // Escaped quote
-                        currentValue += '"';
-                        i++;
-                    } else {
-                        insideQuotes = !insideQuotes;
-                    }
-                } else if (char === ',' && !insideQuotes) {
-                    values.push(currentValue.trim());
-                    currentValue = '';
-                } else {
-                    currentValue += char;
-                }
-            }
-            
-            values.push(currentValue.trim());
-            return values;
+            return '';
         }
 
         // Load programs from Google Sheet on page load
         window.addEventListener('DOMContentLoaded', async function() {
             const statusDiv = document.getElementById('loadStatus');
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
             
             try {
                 console.log('🔄 Loading data from Google Sheet...');
-                console.log('📍 URL:', GOOGLE_SHEET_URL);
+                console.log('📍 URL:', url);
                 
                 statusDiv.innerHTML = '<div class="info-box"><p>⏳ Loading program data...</p></div>';
                 
-                const response = await fetch(GOOGLE_SHEET_URL);
+                const response = await fetch(url);
+                const text = await response.text();
                 
-                console.log('📥 Response status:', response.status);
+                // Parse the JSONP response (remove wrapper)
+                const jsonString = text.substring(47, text.length - 2);
+                const data = JSON.parse(jsonString);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!data.table || !data.table.rows) {
+                    throw new Error('No data found in sheet');
                 }
-                
-                const csvText = await response.text();
-                console.log('📄 CSV preview:', csvText.substring(0, 500));
-                
-                if (!csvText || csvText.trim().length === 0) {
-                    throw new Error('Google Sheet returned empty data');
-                }
-                
-                programsData = parseCSV(csvText);
+
+                // Get headers from first row
+                const headers = data.table.cols.map(col => col.label || '');
+                console.log('📋 Headers found:', headers);
+
+                // Parse rows into program objects
+                programsData = data.table.rows
+                    .filter(row => row.c && row.c[0] && row.c[0].v)
+                    .map(row => {
+                        const program = {};
+                        headers.forEach((header, index) => {
+                            program[header] = getCellValue(row, index);
+                        });
+                        return program;
+                    })
+                    .filter(program => program.Status === 'ACTIVE');
+
                 console.log('✅ Loaded', programsData.length, 'ACTIVE programs');
+                console.log('📋 Programs:', programsData);
                 
                 if (programsData.length === 0) {
                     statusDiv.innerHTML = '<div class="error-box"><strong>⚠️ No active programs found.</strong><br>Please check that your Google Sheet has programs with Status = "ACTIVE".</div>';
@@ -648,9 +582,9 @@
                         <strong>⚠️ Unable to load program data</strong><br>
                         Error: ${error.message}<br><br>
                         <strong>Troubleshooting:</strong><br>
-                        1. Make sure the Google Sheet is published: File → Share → Publish to web<br>
-                        2. Select "Entire Document" and "Web page" or "CSV"<br>
-                        3. Click Publish and confirm<br>
+                        1. Make sure the Google Sheet is shared: "Anyone with the link can view"<br>
+                        2. Check that the sheet tab name matches: "${SHEET_NAME}"<br>
+                        3. Verify the Sheet ID is correct<br>
                         4. Refresh this page
                     </div>
                 `;
